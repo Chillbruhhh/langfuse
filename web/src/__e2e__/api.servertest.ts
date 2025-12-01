@@ -8,6 +8,14 @@ import {
 } from "@langfuse/shared/src/server";
 import waitForExpect from "wait-for-expect";
 
+const webBaseUrl =
+  process.env.LANGFUSE_WEB_BASE_URL ??
+  process.env.NEXTAUTH_URL ??
+  "http://localhost:3000";
+
+const workerBaseUrl =
+  process.env.LANGFUSE_WORKER_BASE_URL ?? "http://localhost:3030";
+
 const generateAuth = (username: string, password: string) => {
   const auth = Buffer.from(`${username}:${password}`).toString("base64");
   return `Basic ${auth}`;
@@ -21,7 +29,7 @@ const projectId = "7a88fb47-b4e2-43b8-a06c-a5ce950dc53a";
 describe("Health endpoints", () => {
   it("web container returns healthy", async () => {
     // Arrange
-    const url = "http://localhost:3000/api/public/health";
+    const url = `${webBaseUrl}/api/public/health`;
 
     // Act
     const response = await fetch(url);
@@ -30,7 +38,7 @@ describe("Health endpoints", () => {
 
   it("worker container returns healthy", async () => {
     // Arrange
-    const url = "http://localhost:3030/api/health";
+    const url = `${workerBaseUrl}/api/health`;
 
     // Act
     const response = await fetch(url, {
@@ -82,7 +90,7 @@ describe("Ingestion Pipeline", () => {
       ],
     };
     // Arrange
-    const url = "http://localhost:3000/api/public/ingestion";
+    const url = `${webBaseUrl}/api/public/ingestion`;
 
     // Act
     const response = await fetch(url, {
@@ -99,7 +107,7 @@ describe("Ingestion Pipeline", () => {
         // we need a second call to the public API with the API key, so that it is stored in redis
         // first call (ingestion above) generates the new, fast API hash
         // second call (below) stores the API key in redis
-        const traceUrl = `http://localhost:3000/api/public/traces/${traceId}`;
+        const traceUrl = `${webBaseUrl}/api/public/traces/${traceId}`;
 
         const traceResponse = await fetch(traceUrl, {
           headers: {
@@ -219,7 +227,7 @@ describe("Ingestion Pipeline", () => {
       ],
     };
     // Arrange
-    const url = "http://localhost:3000/api/public/ingestion";
+    const url = `${webBaseUrl}/api/public/ingestion`;
 
     // Act
     let responses = [];
@@ -259,27 +267,24 @@ describe("Prompts endpoint", () => {
       { role: "system", content: "You are a bot" },
       { role: "user", content: "What's up?" },
     ];
-    const response = await fetch(
-      "http://localhost:3000/api/public/v2/prompts",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: userApiKeyAuth,
-        },
-        body: JSON.stringify({
-          name: promptName,
-          prompt: chatMessages,
-          type: "chat",
-          labels: ["production"],
-        }),
+    const response = await fetch(`${webBaseUrl}/api/public/v2/prompts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: userApiKeyAuth,
       },
-    );
+      body: JSON.stringify({
+        name: promptName,
+        prompt: chatMessages,
+        type: "chat",
+        labels: ["production"],
+      }),
+    });
 
     expect(response.status).toBe(201);
 
     const fetchedPrompt = await fetch(
-      `http://localhost:3000/api/public/v2/prompts/${encodeURIComponent(promptName)}`,
+      `${webBaseUrl}/api/public/v2/prompts/${encodeURIComponent(promptName)}`,
       {
         headers: {
           "Content-Type": "application/json",

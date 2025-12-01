@@ -21,8 +21,9 @@ const TEST_EMAILS: string[] = [
   // email@langfuse.com
 ];
 const TEST_ORG_NAME = "Test Organization";
-const BILLING_URL =
-  "http://localhost:3000/organization/test-org-id/settings/billing";
+const nextAuthBaseUrl =
+  env.NEXTAUTH_URL ?? "http://localhost:3000";
+const BILLING_URL = `${nextAuthBaseUrl}/organization/test-org-id/settings/billing`;
 
 // Calculate a reset date 30 days from now
 const resetDate = new Date();
