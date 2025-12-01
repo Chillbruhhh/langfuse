@@ -12,6 +12,11 @@ import {
 } from "@langfuse/shared/src/server";
 import { type z } from "zod/v4";
 
+const webBaseUrl =
+  process.env.LANGFUSE_WEB_BASE_URL ??
+  process.env.NEXTAUTH_URL ??
+  "http://localhost:3000";
+
 export const ensureTestDatabaseExists = async () => {
   // Only create test database if we're in test environment with test database URL
   if (
@@ -206,7 +211,7 @@ export async function makeAPICall<T = IngestionAPIResponse>(
   auth?: string,
   customHeaders?: Record<string, string>,
 ): Promise<{ body: T; status: number }> {
-  const finalUrl = `http://localhost:3000${url.startsWith("/") ? url : `/${url}`}`;
+  const finalUrl = `${webBaseUrl}${url.startsWith("/") ? url : `/${url}`}`;
   const authorization =
     auth || createBasicAuthHeader("pk-lf-1234567890", "sk-lf-1234567890");
   const options = {

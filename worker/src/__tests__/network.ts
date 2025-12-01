@@ -2,6 +2,21 @@ import { setupServer } from "msw/node";
 import { HttpResponse, http, passthrough } from "msw";
 import { logger } from "@langfuse/shared/src/server";
 
+const sanitizeBase = (base: string) =>
+  base.endsWith("/") ? base.slice(0, -1) : base;
+
+const minioBaseUrl = sanitizeBase(
+  process.env.MINIO_BASE_URL ?? "http://localhost:9090",
+);
+
+const clickhouseBaseUrl = sanitizeBase(
+  process.env.CLICKHOUSE_HTTP_BASE_URL ?? "http://localhost:8123",
+);
+
+const azuriteBaseUrl = sanitizeBase(
+  process.env.AZURITE_BASE_URL ?? "http://localhost:10000",
+);
+
 const DEFAULT_RESPONSE = {
   id: "chatcmpl-9MhZ73aGSmhfAtjU9DwoL4om73hJ7",
   object: "chat.completion",
@@ -52,7 +67,7 @@ function JsonCompletionHandler(data: object) {
 }
 
 function MinioCompletionHandler() {
-  return http.all("http://localhost:9090*", async (request) => {
+  return http.all(`${minioBaseUrl}*`, async (request) => {
     logger.info("minio handler");
     if ((request.params[0] as string).startsWith("/langfuse/events/")) {
       return new HttpResponse("Success");
@@ -62,14 +77,14 @@ function MinioCompletionHandler() {
 }
 
 function ClickHouseCompletionHandler() {
-  return http.all("http://localhost:8123*", async () => {
+  return http.all(`${clickhouseBaseUrl}*`, async () => {
     logger.info("clickhouse handler");
     return passthrough();
   });
 }
 
 function AzuriteCompletionHandler() {
-  return http.all("http://localhost:10000*", async () => {
+  return http.all(`${azuriteBaseUrl}*`, async () => {
     logger.info("handle azurite");
     return passthrough();
   });
